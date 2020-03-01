@@ -9,37 +9,19 @@
     <meta name="description" content="The 3 OSC Visualizer">
     <meta name="author" content="ScarySheepy">
 
-    <link rel="stylesheet" href="css/styles.css?v=1.0">
+    <link rel="stylesheet" href="styles.css">
 
 </head>
 
-<div style="position: relative;">
-    <canvas id="colorPicker" class="color-canvas" width="640" height="640"
-        style="position: absolute; left: 0; top: 0; z-index: 0;"></canvas>
-    <canvas id="selectionCircle" class="color-canvas" width="640" height="640"
-        style="position: absolute; left: 0; top: 0; z-index: 1; pointer-events: none;"></canvas>
-    <canvas id="colorSelect" class="color-canvas" width="128" height="256"
-        style="position: absolute; left: 640px; top: 256px;"></canvas>
-</div>
 
-
-
-<body style=" background-color:black;">
+<body>
+    <div id="sidebar">
+        <!--Don't set canvas width and height in css-->
+        <canvas id="colorPicker" class="color-canvas" width="320px" height="320px"></canvas>
+        <canvas id="selectionCircle" class="color-canvas" width="320px" height="320px"></canvas>
+        <canvas id="colorSelected" class="color-canvas" width="320px" height="128px"></canvas>
+    </div>
     <script src="js/script.js"></script>
 </body>
-
-<style type="text/css">
-    canvas {
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        -khtml-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-        outline: none;
-        -webkit-tap-highlight-color: rgba(255, 255, 255, 0);
-        /* mobile webkit */
-    }
-</style>
 
 </html>

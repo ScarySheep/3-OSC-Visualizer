@@ -46,21 +46,20 @@ function colorPicker() {
     var canvasEl = document.getElementById('colorPicker');
     var context = canvasEl.getContext('2d');
 
-    var image = new Image(512, 512);
+    var image = new Image(256, 256);
     var delta_x = (canvasEl.width - image.width) / 2;
     var delta_y = (canvasEl.height - image.height) / 2;
 
     var points = [];
-    points.push([256, 6]);
-    points.push([40, 131]);
-    points.push([40, 381]);
-    points.push([256, 506]);
-    points.push([472, 381]);
-    points.push([472, 131]);
+    points.push([128, 5]);
+    points.push([20, 66]);
+    points.push([20, 190]);
+    points.push([128, 252]);
+    points.push([236, 190]);
+    points.push([236, 66]);
     for (var i = 0; i < 6; i++) {
-        points[i][0] = points[i][0] + delta_x;
-        points[i][1] = points[i][1] + delta_y;
-        console.log(points[i]);
+        points[i][0] = (points[i][0] + delta_x);
+        points[i][1] = (points[i][1] + delta_y);
     }
 
     image.onload = function () {
@@ -68,7 +67,7 @@ function colorPicker() {
         // context.beginPath();
         // context.strokeStyle = '#ffffff';
         // context.moveTo(points[0][0], points[0][1]);
-        // for (var i = 0; i < 6; i++) {
+        // for (var i = 1; i < 6; i++) {
         //     context.lineTo(points[i][0], points[i][1]);
         // }
         // context.stroke();
@@ -83,7 +82,7 @@ function colorPicker() {
         if (rgba[0] + rgba[1] + rgba[2] != 0) {
             mouseDown = true;
             colorSelected(rgba[0], rgba[1], rgba[2])
-            selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY);
+            selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgba[0], rgba[1], rgba[2]);
         }
 
     });
@@ -96,9 +95,6 @@ function colorPicker() {
         mouseDown = false;
     });
 
-    var r;
-    var g;
-    var b;
     var pos = [256, 256];
 
 
@@ -109,22 +105,22 @@ function colorPicker() {
             var mouse_pos = [mouseEvent.offsetX, mouseEvent.offsetY]
 
             if (rgba[0] + rgba[1] + rgba[2] == 0) {
-                if (mouse_pos[1] < 131 + delta_y) {
-                    if (mouse_pos[0] < 256 + delta_x) {
+                if (mouse_pos[1] < points[1][1]) {
+                    if (mouse_pos[0] < points[0][0]) {
                         pos = project(mouse_pos, points[0], points[1]);
                     } else {
                         pos = project(mouse_pos, points[0], points[5]);
                     }
-                } else if (mouse_pos[1] > 381 + delta_y) {
-                    if (mouse_pos[0] < 256 + delta_x) {
+                } else if (mouse_pos[1] > points[2][1]) {
+                    if (mouse_pos[0] < points[0][0]) {
                         pos = project(mouse_pos, points[2], points[3]);
                     } else {
                         pos = project(mouse_pos, points[3], points[4]);
                     }
                 } else {
-                    if (mouse_pos[0] < 40 + delta_x) {
+                    if (mouse_pos[0] < points[1][0]) {
                         pos = project(mouse_pos, points[1], points[2]);
-                    } else if (mouse_pos[0] > 472 + delta_x) {
+                    } else if (mouse_pos[0] > points[2][0]) {
                         pos = project(mouse_pos, points[4], points[5]);
                     }
                 }
@@ -135,31 +131,31 @@ function colorPicker() {
             }
 
             colorSelected(rgba[0], rgba[1], rgba[2]);
-            selectionCircle(pos[0], pos[1]);
+            selectionCircle(pos[0], pos[1], rgba[0], rgba[1], rgba[2]);
         }
     });
 }
 
 
 function colorSelected(r, g, b) {
-    var canvasEL = document.getElementById('colorSelect');
+    var canvasEL = document.getElementById('colorSelected');
     var context = canvasEL.getContext('2d');
     context.clearRect(0, 0, canvasEL.width, canvasEL.height);
 
     var radius = 64;
 
     context.beginPath();
-    context.arc(64, 64, radius, 0, 2 * Math.PI, false);
+    context.arc(105, 64, radius, 0, 2 * Math.PI, false);
     context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
     context.fill();
 
     context.font = '20pt Calibri';
-    context.fillText("r : " + r, 4, 170);
-    context.fillText("g : " + g, 1, 205);
-    context.fillText("b : " + b, 0, 240);
+    context.fillText("r : " + r, 193, 50);
+    context.fillText("g : " + g, 191, 80);
+    context.fillText("b : " + b, 190, 110);
 }
 
-function selectionCircle(x, y) {
+function selectionCircle(x, y, r, g, b) {
     var canvasEL = document.getElementById('selectionCircle');
     var context = canvasEL.getContext('2d');
     context.clearRect(0, 0, canvasEL.width, canvasEL.height);
@@ -169,8 +165,10 @@ function selectionCircle(x, y) {
     context.lineWidth = 3;
     context.strokeStyle = '#000000';
     context.stroke();
+
+    canvasEL.style.borderColor = "rgb(" + r + "," + g + "," + b + ")";
 }
 
 colorPicker();
 colorSelected(256, 256, 256);
-selectionCircle(256, 256);
+selectionCircle(160, 160, 256, 256, 256);
