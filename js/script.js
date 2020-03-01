@@ -7,7 +7,7 @@ var rgb = {
 
 //palette
 var lastClicked;
-var grid = clickableGrid(24, 10, function (el, row, col, i) {
+var grid = clickableGrid(25, 10, function (el, row, col, i) {
     console.log("You clicked on element:", el);
     console.log("You clicked on row:", row);
     console.log("You clicked on col:", col);
@@ -17,11 +17,24 @@ var grid = clickableGrid(24, 10, function (el, row, col, i) {
     el.style.backgroundColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
     // if (lastClicked) lastClicked.className = '';
     // lastClicked = el;
+}, function (el, row, col, i) {
+    console.log("You clicked on element:", el);
+    console.log("You clicked on row:", row);
+    console.log("You clicked on col:", col);
+    console.log("You clicked on item #:", i);
+
+    if (el.className == 'clicked') {
+        el.className = '';
+    }
+    el.style.backgroundColor = "rgb(0,0,0)";
+    // if (lastClicked) lastClicked.className = '';
+    // lastClicked = el;
+    return false;
 });
 
-document.body.appendChild(grid);
+document.getElementById("pallete").appendChild(grid);
 
-function clickableGrid(rows, cols, callback) {
+function clickableGrid(rows, cols, callbackClick, callbackContextMenu) {
     var i = 0;
     var grid = document.createElement('table');
     grid.bgColor = "#000000";
@@ -33,7 +46,14 @@ function clickableGrid(rows, cols, callback) {
             //cell.innerHTML = ++i;
             cell.addEventListener('click', (function (el, r, c, i) {
                 return function () {
-                    callback(el, r, c, i);
+                    callbackClick(el, r, c, i);
+                }
+            })(cell, r, c, i), false);
+
+            cell.addEventListener('contextmenu', (function (el, r, c, i) {
+                return function (e) {
+                    e.preventDefault();
+                    callbackContextMenu(el, r, c, i);
                 }
             })(cell, r, c, i), false);
         }
