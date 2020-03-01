@@ -1,35 +1,46 @@
-// var lastClicked;
-// var grid = clickableGrid(10, 10, function (el, row, col, i) {
-//     console.log("You clicked on element:", el);
-//     console.log("You clicked on row:", row);
-//     console.log("You clicked on col:", col);
-//     console.log("You clicked on item #:", i);
+//global variables
+var rgb = {
+    r: 256,
+    g: 256,
+    b: 256
+}
 
-//     el.className = 'clicked';
-//     if (lastClicked) lastClicked.className = '';
-//     lastClicked = el;
-// });
+//palette
+var lastClicked;
+var grid = clickableGrid(24, 10, function (el, row, col, i) {
+    console.log("You clicked on element:", el);
+    console.log("You clicked on row:", row);
+    console.log("You clicked on col:", col);
+    console.log("You clicked on item #:", i);
 
-// document.body.appendChild(grid);
+    el.className = 'clicked';
+    el.style.backgroundColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+    // if (lastClicked) lastClicked.className = '';
+    // lastClicked = el;
+});
 
-// function clickableGrid(rows, cols, callback) {
-//     var i = 0;
-//     var grid = document.createElement('table');
-//     grid.className = 'grid';
-//     for (var r = 0; r < rows; ++r) {
-//         var tr = grid.appendChild(document.createElement('tr'));
-//         for (var c = 0; c < cols; ++c) {
-//             var cell = tr.appendChild(document.createElement('td'));
-//             cell.innerHTML = ++i;
-//             cell.addEventListener('click', (function (el, r, c, i) {
-//                 return function () {
-//                     callback(el, r, c, i);
-//                 }
-//             })(cell, r, c, i), false);
-//         }
-//     }
-//     return grid;
-// }
+document.body.appendChild(grid);
+
+function clickableGrid(rows, cols, callback) {
+    var i = 0;
+    var grid = document.createElement('table');
+    grid.bgColor = "#000000";
+    grid.className = 'grid';
+    for (var r = 0; r < rows; ++r) {
+        var tr = grid.appendChild(document.createElement('tr'));
+        for (var c = 0; c < cols; ++c) {
+            var cell = tr.appendChild(document.createElement('td'));
+            //cell.innerHTML = ++i;
+            cell.addEventListener('click', (function (el, r, c, i) {
+                return function () {
+                    callback(el, r, c, i);
+                }
+            })(cell, r, c, i), false);
+        }
+    }
+    return grid;
+}
+
 function project(p, a, b) {
     var atob = [b[0] - a[0], b[1] - a[1]];
     var atop = [p[0] - a[0], p[1] - a[1]];
@@ -42,6 +53,8 @@ function project(p, a, b) {
     return point;
 }
 
+
+//sound stuff
 var sineWave = new Pizzicato.Sound({
     source: 'wave',
     options: {
@@ -49,6 +62,7 @@ var sineWave = new Pizzicato.Sound({
         frequency: 440
     }
 });
+
 
 var squareWave = new Pizzicato.Sound({
     source: 'wave',
@@ -70,6 +84,8 @@ var soundGroup = new Pizzicato.Group([sineWave, squareWave, triangleWave]);
 var volume = 0.1;
 soundGroup.volume = volume;
 
+
+//graphic and input stuff
 function colorPicker() {
     var canvasEl = document.getElementById('colorPicker');
     var context = canvasEl.getContext('2d');
@@ -106,14 +122,18 @@ function colorPicker() {
     var mouseDown = false;
     canvasEl.addEventListener('mousedown', function (mouseEvent) {
         var imgData = context.getImageData(mouseEvent.offsetX, mouseEvent.offsetY, 1, 1);
-        var rgba = imgData.data;
-        if (rgba[0] + rgba[1] + rgba[2] != 0) {
+        rgb.r = imgData.data[0];
+        rgb.g = imgData.data[1];
+        rgb.b = imgData.data[2];
+
+        if (rgb.r + rgb.g + rgb.b != 0) {
             mouseDown = true;
-            colorSelected(rgba[0], rgba[1], rgba[2])
-            selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgba[0], rgba[1], rgba[2]);
-            sineWave.volume = rgba[0] / (rgba[0] + rgba[1] + rgba[2]);
-            squareWave.volume = rgba[1] / (rgba[0] + rgba[1] + rgba[2]);
-            triangleWave.volume = rgba[2] / (rgba[0] + rgba[1] + rgba[2]);
+            colorSelected(rgb.r, rgb.g, rgb.b)
+            selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgb.r, rgb.g, rgb.b);
+
+            sineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
+            squareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
+            triangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
             soundGroup.play();
         }
 
@@ -135,10 +155,12 @@ function colorPicker() {
     canvasEl.addEventListener('mousemove', function (mouseEvent) {
         if (mouseDown) {
             var imgData = context.getImageData(mouseEvent.offsetX, mouseEvent.offsetY, 1, 1);
-            var rgba = imgData.data;
+            rgb.r = imgData.data[0];
+            rgb.g = imgData.data[1];
+            rgb.b = imgData.data[2];
             var mouse_pos = [mouseEvent.offsetX, mouseEvent.offsetY]
 
-            if (rgba[0] + rgba[1] + rgba[2] == 0) {
+            if (rgb.r + rgb.g + rgb.b == 0) {
                 if (mouse_pos[1] < points[1][1]) {
                     if (mouse_pos[0] < points[0][0]) {
                         pos = project(mouse_pos, points[0], points[1]);
@@ -159,23 +181,25 @@ function colorPicker() {
                     }
                 }
                 imgData = context.getImageData(pos[0], pos[1], 1, 1);
-                rgba = imgData.data;
+                rgb.r = imgData.data[0];
+                rgb.g = imgData.data[1];
+                rgb.b = imgData.data[2];
             } else {
                 pos = mouse_pos;
             }
 
-            colorSelected(rgba[0], rgba[1], rgba[2]);
-            selectionCircle(pos[0], pos[1], rgba[0], rgba[1], rgba[2]);
+            colorSelected(rgb.r, rgb.g, rgb.b)
+            selectionCircle(pos[0], pos[1], rgb.r, rgb.g, rgb.b);
 
-            sineWave.volume = rgba[0] / (rgba[0] + rgba[1] + rgba[2]);
-            squareWave.volume = rgba[1] / (rgba[0] + rgba[1] + rgba[2]);
-            triangleWave.volume = rgba[2] / (rgba[0] + rgba[1] + rgba[2]);
+            sineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
+            squareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
+            triangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
         }
     });
 }
 
 
-function colorSelected(r, g, b) {
+function colorSelected() {
     var canvasEL = document.getElementById('colorSelected');
     var context = canvasEL.getContext('2d');
     context.clearRect(0, 0, canvasEL.width, canvasEL.height);
@@ -184,16 +208,16 @@ function colorSelected(r, g, b) {
 
     context.beginPath();
     context.arc(105, 64, radius, 0, 2 * Math.PI, false);
-    context.fillStyle = "rgb(" + r + "," + g + "," + b + ")";
+    context.fillStyle = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
     context.fill();
 
     context.font = '20pt Calibri';
-    context.fillText("r : " + r, 193, 50);
-    context.fillText("g : " + g, 191, 80);
-    context.fillText("b : " + b, 190, 110);
+    context.fillText("r : " + rgb.r, 193, 50);
+    context.fillText("g : " + rgb.g, 191, 80);
+    context.fillText("b : " + rgb.b, 190, 110);
 }
 
-function selectionCircle(x, y, r, g, b) {
+function selectionCircle(x, y) {
     var canvasEL = document.getElementById('selectionCircle');
     var context = canvasEL.getContext('2d');
     context.clearRect(0, 0, canvasEL.width, canvasEL.height);
@@ -204,11 +228,13 @@ function selectionCircle(x, y, r, g, b) {
     context.strokeStyle = '#000000';
     context.stroke();
 
-    canvasEL.style.borderColor = "rgb(" + r + "," + g + "," + b + ")";
+    canvasEL.style.borderColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
 }
 
+
+//function calling
 colorPicker();
-colorSelected(256, 256, 256);
-selectionCircle(160, 160, 256, 256, 256);
+colorSelected();
+selectionCircle(160, 160);
 
 
