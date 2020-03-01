@@ -42,6 +42,34 @@ function project(p, a, b) {
     return point;
 }
 
+var sineWave = new Pizzicato.Sound({
+    source: 'wave',
+    options: {
+        type: 'sine',
+        frequency: 440
+    }
+});
+
+var squareWave = new Pizzicato.Sound({
+    source: 'wave',
+    options: {
+        type: 'square',
+        frequency: 440
+    }
+});
+
+var triangleWave = new Pizzicato.Sound({
+    source: 'wave',
+    options: {
+        type: 'triangle',
+        frequency: 440
+    }
+});
+
+var soundGroup = new Pizzicato.Group([sineWave, squareWave, triangleWave]);
+var volume = 0.1;
+soundGroup.volume = volume;
+
 function colorPicker() {
     var canvasEl = document.getElementById('colorPicker');
     var context = canvasEl.getContext('2d');
@@ -83,16 +111,22 @@ function colorPicker() {
             mouseDown = true;
             colorSelected(rgba[0], rgba[1], rgba[2])
             selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgba[0], rgba[1], rgba[2]);
+            sineWave.volume = rgba[0] / (rgba[0] + rgba[1] + rgba[2]);
+            squareWave.volume = rgba[1] / (rgba[0] + rgba[1] + rgba[2]);
+            triangleWave.volume = rgba[2] / (rgba[0] + rgba[1] + rgba[2]);
+            soundGroup.play();
         }
 
     });
 
     canvasEl.addEventListener('mouseup', function (mouseEvent) {
         mouseDown = false;
+        soundGroup.stop();
     });
 
     canvasEl.addEventListener('mouseout', function (mouseEvent) {
         mouseDown = false;
+        soundGroup.stop();
     });
 
     var pos = [256, 256];
@@ -132,6 +166,10 @@ function colorPicker() {
 
             colorSelected(rgba[0], rgba[1], rgba[2]);
             selectionCircle(pos[0], pos[1], rgba[0], rgba[1], rgba[2]);
+
+            sineWave.volume = rgba[0] / (rgba[0] + rgba[1] + rgba[2]);
+            squareWave.volume = rgba[1] / (rgba[0] + rgba[1] + rgba[2]);
+            triangleWave.volume = rgba[2] / (rgba[0] + rgba[1] + rgba[2]);
         }
     });
 }
@@ -172,3 +210,5 @@ function selectionCircle(x, y, r, g, b) {
 colorPicker();
 colorSelected(256, 256, 256);
 selectionCircle(160, 160, 256, 256, 256);
+
+
