@@ -5,73 +5,123 @@ var rgb = {
     b: 256
 }
 
+var scores = [];
+var notes = [];
+
 //palette
-var lastClicked;
-var grid = clickableGrid(25, 10, function (el, row, col, i) {
-    console.log("You clicked on element:", el);
-    console.log("You clicked on row:", row);
-    console.log("You clicked on col:", col);
-    console.log("You clicked on item #:", i);
-
-    el.className = 'clicked';
-    el.style.backgroundColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
-    // if (lastClicked) lastClicked.className = '';
-    // lastClicked = el;
-}, function (el, row, col, i) {
-    console.log("You clicked on element:", el);
-    console.log("You clicked on row:", row);
-    console.log("You clicked on col:", col);
-    console.log("You clicked on item #:", i);
-
-    if (el.className == 'clicked') {
-        el.className = '';
+function drawNotes(context, notes) {
+    context.lineWidth = 3;
+    context.strokeStyle = "rgb(" + notes[0].color.r + "," + notes[0].color.g + "," + notes[0].color.b + ")";
+    context.beginPath();
+    context.moveTo(notes[0].x, notes[0].y);
+    for (var note of notes) {
+        context.lineTo(note.x, note.y);
     }
-    el.style.backgroundColor = "rgb(0,0,0)";
-    // if (lastClicked) lastClicked.className = '';
-    // lastClicked = el;
-    return false;
-});
+    context.stroke();
+    context.closePath();
+}
 
-document.getElementById("pallete").appendChild(grid);
 
-function clickableGrid(rows, cols, callbackClick, callbackContextMenu) {
-    var i = 0;
-    var grid = document.createElement('table');
-    grid.bgColor = "#000000";
-    grid.className = 'grid';
-    for (var r = 0; r < rows; ++r) {
-        var tr = grid.appendChild(document.createElement('tr'));
-        for (var c = 0; c < cols; ++c) {
-            var cell = tr.appendChild(document.createElement('td'));
-            //cell.innerHTML = ++i;
-            cell.addEventListener('click', (function (el, r, c, i) {
-                return function () {
-                    callbackClick(el, r, c, i);
-                }
-            })(cell, r, c, i), false);
+function drawing() {
+    var startDrawing = false;
+    var canvasEl = document.getElementById('palette');
+    var context = canvasEl.getContext('2d');
 
-            cell.addEventListener('contextmenu', (function (el, r, c, i) {
-                return function (e) {
-                    e.preventDefault();
-                    callbackContextMenu(el, r, c, i);
-                }
-            })(cell, r, c, i), false);
+    canvasEl.addEventListener('mousedown', function (mouseEvent) {
+        if (mouseEvent.buttons == 1) {
+            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
+            if (!startDrawing) {
+                startDrawing = true;
+                notes = [];
+            }
+            notes.push(note);
         }
-    }
-    return grid;
+    });
+
+    canvasEl.addEventListener('mousemove', function (mouseEvent) {
+        if (startDrawing) {
+            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            //let to make notes local in for because I'm lazy to just change the name
+            //here we draw the old lines
+            for (let notes of scores) {
+                drawNotes(context, notes);
+            }
+            //here we draw the current line
+            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
+            notes.push(note);
+            drawNotes(context, notes);
+            notes.pop();
+        }
+    });
+
+    canvasEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        if (startDrawing) {
+            startDrawing = false;
+            scores.push(notes);
+            //console.log(scores);
+            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            for (let notes of scores) {
+                drawNotes(context, notes);
+            }
+        }
+    }, false);
 }
 
-function project(p, a, b) {
-    var atob = [b[0] - a[0], b[1] - a[1]];
-    var atop = [p[0] - a[0], p[1] - a[1]];
-    var len = atob[0] * atob[0] + atob[1] * atob[1];
-    var dot = atop[0] * atob[0] + atop[1] * atob[1];
-    var t = Math.min(1, Math.max(0, dot / len));
+// var lastClicked;
+// var grid = clickableGrid(25, 10, function (el, row, col, i) {
+//     console.log("You clicked on element:", el);
+//     console.log("You clicked on row:", row);
+//     console.log("You clicked on col:", col);
+//     console.log("You clicked on item #:", i);
 
-    dot = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
-    var point = [a[0] + atob[0] * t, a[1] + atob[1] * t];
-    return point;
-}
+//     el.className = 'clicked';
+//     el.style.backgroundColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+//     // if (lastClicked) lastClicked.className = '';
+//     // lastClicked = el;
+// }, function (el, row, col, i) {
+//     console.log("You clicked on element:", el);
+//     console.log("You clicked on row:", row);
+//     console.log("You clicked on col:", col);
+//     console.log("You clicked on item #:", i);
+
+//     if (el.className == 'clicked') {
+//         el.className = '';
+//     }
+//     el.style.backgroundColor = "rgb(0,0,0)";
+//     // if (lastClicked) lastClicked.className = '';
+//     // lastClicked = el;
+//     return false;
+// });
+
+// document.getElementById("pallete").appendChild(grid);
+
+// function clickableGrid(rows, cols, callbackClick, callbackContextMenu) {
+//     var i = 0;
+//     var grid = document.createElement('table');
+//     grid.bgColor = "#000000";
+//     grid.className = 'grid';
+//     for (var r = 0; r < rows; ++r) {
+//         var tr = grid.appendChild(document.createElement('tr'));
+//         for (var c = 0; c < cols; ++c) {
+//             var cell = tr.appendChild(document.createElement('td'));
+//             //cell.innerHTML = ++i;
+//             cell.addEventListener('click', (function (el, r, c, i) {
+//                 return function () {
+//                     callbackClick(el, r, c, i);
+//                 }
+//             })(cell, r, c, i), false);
+
+//             cell.addEventListener('contextmenu', (function (el, r, c, i) {
+//                 return function (e) {
+//                     e.preventDefault();
+//                     callbackContextMenu(el, r, c, i);
+//                 }
+//             })(cell, r, c, i), false);
+//         }
+//     }
+//     return grid;
+// }
 
 
 //sound stuff
@@ -104,8 +154,19 @@ var soundGroup = new Pizzicato.Group([sineWave, squareWave, triangleWave]);
 var volume = 0.1;
 soundGroup.volume = volume;
 
-
 //graphic and input stuff
+function project(p, a, b) {
+    var atob = [b[0] - a[0], b[1] - a[1]];
+    var atop = [p[0] - a[0], p[1] - a[1]];
+    var len = atob[0] * atob[0] + atob[1] * atob[1];
+    var dot = atop[0] * atob[0] + atop[1] * atob[1];
+    var t = Math.min(1, Math.max(0, dot / len));
+
+    dot = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]);
+    var point = [a[0] + atob[0] * t, a[1] + atob[1] * t];
+    return point;
+}
+
 function colorPicker() {
     var canvasEl = document.getElementById('colorPicker');
     var context = canvasEl.getContext('2d');
@@ -216,13 +277,16 @@ function colorPicker() {
             triangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
         }
     });
+
+    canvasEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+    }, false);
 }
 
-
 function colorSelected() {
-    var canvasEL = document.getElementById('colorSelected');
-    var context = canvasEL.getContext('2d');
-    context.clearRect(0, 0, canvasEL.width, canvasEL.height);
+    var canvasEl = document.getElementById('colorSelected');
+    var context = canvasEl.getContext('2d');
+    context.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
     var radius = 64;
 
@@ -235,12 +299,16 @@ function colorSelected() {
     context.fillText("r : " + rgb.r, 193, 50);
     context.fillText("g : " + rgb.g, 191, 80);
     context.fillText("b : " + rgb.b, 190, 110);
+
+    canvasEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+    }, false);
 }
 
 function selectionCircle(x, y) {
-    var canvasEL = document.getElementById('selectionCircle');
-    var context = canvasEL.getContext('2d');
-    context.clearRect(0, 0, canvasEL.width, canvasEL.height);
+    var canvasEl = document.getElementById('selectionCircle');
+    var context = canvasEl.getContext('2d');
+    context.clearRect(0, 0, canvasEl.width, canvasEl.height);
 
     context.beginPath();
     context.arc(x, y, 6, 0, 2 * Math.PI, false);
@@ -248,7 +316,11 @@ function selectionCircle(x, y) {
     context.strokeStyle = '#000000';
     context.stroke();
 
-    canvasEL.style.borderColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+    canvasEl.style.borderColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
+
+    canvasEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+    }, false);
 }
 
 
@@ -256,5 +328,6 @@ function selectionCircle(x, y) {
 colorPicker();
 colorSelected();
 selectionCircle(160, 160);
+drawing();
 
 
