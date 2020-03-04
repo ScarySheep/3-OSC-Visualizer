@@ -58,74 +58,22 @@ function drawing() {
         e.preventDefault();
         if (startDrawing) {
             startDrawing = false;
-            scores.push(notes);
+            if (notes.length != 1) {
+                scores.push(notes);
+            }
             //console.log(scores);
             context.clearRect(0, 0, canvasEl.width, canvasEl.height);
             for (let notes of scores) {
                 drawNotes(context, notes);
             }
+            orderingNotes();
         }
     }, false);
 }
 
-// var lastClicked;
-// var grid = clickableGrid(25, 10, function (el, row, col, i) {
-//     console.log("You clicked on element:", el);
-//     console.log("You clicked on row:", row);
-//     console.log("You clicked on col:", col);
-//     console.log("You clicked on item #:", i);
 
-//     el.className = 'clicked';
-//     el.style.backgroundColor = "rgb(" + rgb.r + "," + rgb.g + "," + rgb.b + ")";
-//     // if (lastClicked) lastClicked.className = '';
-//     // lastClicked = el;
-// }, function (el, row, col, i) {
-//     console.log("You clicked on element:", el);
-//     console.log("You clicked on row:", row);
-//     console.log("You clicked on col:", col);
-//     console.log("You clicked on item #:", i);
-
-//     if (el.className == 'clicked') {
-//         el.className = '';
-//     }
-//     el.style.backgroundColor = "rgb(0,0,0)";
-//     // if (lastClicked) lastClicked.className = '';
-//     // lastClicked = el;
-//     return false;
-// });
-
-// document.getElementById("pallete").appendChild(grid);
-
-// function clickableGrid(rows, cols, callbackClick, callbackContextMenu) {
-//     var i = 0;
-//     var grid = document.createElement('table');
-//     grid.bgColor = "#000000";
-//     grid.className = 'grid';
-//     for (var r = 0; r < rows; ++r) {
-//         var tr = grid.appendChild(document.createElement('tr'));
-//         for (var c = 0; c < cols; ++c) {
-//             var cell = tr.appendChild(document.createElement('td'));
-//             //cell.innerHTML = ++i;
-//             cell.addEventListener('click', (function (el, r, c, i) {
-//                 return function () {
-//                     callbackClick(el, r, c, i);
-//                 }
-//             })(cell, r, c, i), false);
-
-//             cell.addEventListener('contextmenu', (function (el, r, c, i) {
-//                 return function (e) {
-//                     e.preventDefault();
-//                     callbackContextMenu(el, r, c, i);
-//                 }
-//             })(cell, r, c, i), false);
-//         }
-//     }
-//     return grid;
-// }
-
-
-//sound stuff
-var sineWave = new Pizzicato.Sound({
+//selecting sound
+var selectedSineWave = new Pizzicato.Sound({
     source: 'wave',
     options: {
         type: 'sine',
@@ -133,8 +81,7 @@ var sineWave = new Pizzicato.Sound({
     }
 });
 
-
-var squareWave = new Pizzicato.Sound({
+var selectedSquareWave = new Pizzicato.Sound({
     source: 'wave',
     options: {
         type: 'square',
@@ -142,7 +89,7 @@ var squareWave = new Pizzicato.Sound({
     }
 });
 
-var triangleWave = new Pizzicato.Sound({
+var selectedTriangleWave = new Pizzicato.Sound({
     source: 'wave',
     options: {
         type: 'triangle',
@@ -150,10 +97,99 @@ var triangleWave = new Pizzicato.Sound({
     }
 });
 
-var soundGroup = new Pizzicato.Group([sineWave, squareWave, triangleWave]);
-var volume = 0.1;
-soundGroup.volume = volume;
+var selectedSound = new Pizzicato.Group([selectedSineWave, selectedSquareWave, selectedTriangleWave]);
+Pizzicato.volume = 0.1;
 
+//mix and play the sound from stored data
+function playSound() {
+    //create all the required sound
+    //calculate the volume
+    //get all the frequency info
+    for (let notes of scores) {
+        var sound = new Sound(notes[0].color.r, notes[0].color.g, notes[0].color.b);
+        sound.play();
+    }
+
+}
+
+function Sound(r, g, b) {
+    this.r = new Pizzicato.Sound({
+        source: 'wave',
+        options: {
+            type: 'sine',
+            frequency: 440
+        }
+    });
+    this.g = new Pizzicato.Sound({
+        source: 'wave',
+        options: {
+            type: 'square',
+            frequency: 440
+        }
+    });
+    this.b = new Pizzicato.Sound({
+        source: 'wave',
+        options: {
+            type: 'triangle',
+            frequency: 440
+        }
+    });
+
+    this.r.volume = r / (r + g + b);
+    this.g.volume = g / (r + g + b);
+    this.b.volume = b / (r + g + b);
+
+    this.play = function () {
+        this.r.play();
+        this.g.play();
+        this.b.play();
+    }
+
+    this.frequency = function (f) {
+        this.r.frequency = f;
+        this.g.frequency = f;
+        this.b.frequency = f;
+    }
+}
+
+//cut all notes to right orientation
+function orderingNotes() {
+    let newScores = [];
+    for (let notes of scores) {
+        var l = notes.length;
+        var i = 0;
+        var tmp_pos = true;
+        var positive = true;
+        var last_cut = 0;
+
+        while (i < l - 1) {
+            if (notes[i].x >= notes[i + 1].x) {
+                positive = false;
+            } else {
+                positive = true;
+            }
+
+            if (positive != tmp_pos) {
+                if (i != last_cut) {
+                    var arr = notes.slice(last_cut, i + 1);
+                    if (arr[0].x >= arr[1].x) {
+                        arr.reverse();
+                    }
+                    newScores.push(arr);
+                    last_cut = i;
+                }
+            }
+            tmp_pos = positive;
+            i++;
+        }
+        var arr = notes.slice(last_cut, i + 1);
+        if (arr[0].x >= arr[1].x) {
+            arr.reverse();
+        }
+        newScores.push(arr);
+    }
+    scores = newScores;
+}
 //graphic and input stuff
 function project(p, a, b) {
     var atob = [b[0] - a[0], b[1] - a[1]];
@@ -212,22 +248,22 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgb.r, rgb.g, rgb.b);
 
-            sineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
-            squareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
-            triangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
-            soundGroup.play();
+            selectedSineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
+            selectedSquareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
+            selectedTriangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
+            selectedSound.play();
         }
 
     });
 
     canvasEl.addEventListener('mouseup', function (mouseEvent) {
         mouseDown = false;
-        soundGroup.stop();
+        selectedSound.stop();
     });
 
     canvasEl.addEventListener('mouseout', function (mouseEvent) {
         mouseDown = false;
-        soundGroup.stop();
+        selectedSound.stop();
     });
 
     var pos = [256, 256];
@@ -272,9 +308,9 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(pos[0], pos[1], rgb.r, rgb.g, rgb.b);
 
-            sineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
-            squareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
-            triangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
+            selectedSineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
+            selectedSquareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
+            selectedTriangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
         }
     });
 
