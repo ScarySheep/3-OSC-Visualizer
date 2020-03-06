@@ -106,28 +106,50 @@ function playSound() {
     //calculate the volume
     //get all the frequency info
     for (let notes of scores) {
-        var sound = new Sound(notes[0].color.r, notes[0].color.g, notes[0].color.b);
-        sound.play();
+        var processedNotes = [];
+        for (var i = 0; i < notes.length - 1; i++) {
+            var d_y = (notes[i + 1].y - notes[i].y) / (notes[i + 1].x - notes[i].x);
+            for (var j = 0; j < (notes[i + 1].x - notes[i].x); j++) {
+                var p = notes[i].y + d_y * j;
+                //pixel to frequency conversion
+                var f = 440 * (Math.pow((Math.pow(2, 1 / 12)), (375 - p) / 30));
+                processedNotes.push(f);
+            }
+        }
+        processedNotes.push(notes[notes.length - 1].y);
+        var sound = new Sound(notes[0].color.r, notes[0].color.g, notes[0].color.b, scores.length, processedNotes, notes[0].x, 0);
+        setTimeSounds(sound);
     }
 
 }
 
-function Sound(r, g, b) {
-    this.r = new Pizzicato.Sound({
+function setTimeSounds(sound) {
+    setTimeout(function () {
+        sound.play();
+        sound.inId = setInterval(function () {
+            sound.changeFrequency();
+        }, 1);
+    }, sound.startTime);
+
+}
+
+function Sound(r, g, b, total, n, startTime, id) {
+    console.log(n);
+    var r_sound = new Pizzicato.Sound({
         source: 'wave',
         options: {
             type: 'sine',
             frequency: 440
         }
     });
-    this.g = new Pizzicato.Sound({
+    var g_sound = new Pizzicato.Sound({
         source: 'wave',
         options: {
             type: 'square',
             frequency: 440
         }
     });
-    this.b = new Pizzicato.Sound({
+    var b_sound = new Pizzicato.Sound({
         source: 'wave',
         options: {
             type: 'triangle',
@@ -135,21 +157,39 @@ function Sound(r, g, b) {
         }
     });
 
-    this.r.volume = r / (r + g + b);
-    this.g.volume = g / (r + g + b);
-    this.b.volume = b / (r + g + b);
+    r_sound.frequency = n[0];
+    g_sound.frequency = n[0];
+    b_sound.frequency = n[0];
+    this.startTime = startTime;
+
+    r_sound.volume = r / (r + g + b) / total;
+    g_sound.volume = g / (r + g + b) / total;
+    b_sound.volume = b / (r + g + b) / total;
 
     this.play = function () {
-        this.r.play();
-        this.g.play();
-        this.b.play();
+        r_sound.play();
+        g_sound.play();
+        b_sound.play();
     }
 
-    this.frequency = function (f) {
-        this.r.frequency = f;
-        this.g.frequency = f;
-        this.b.frequency = f;
-    }
+    var counter = 0;
+    this.inId = id;
+    var self = this;
+
+    this.changeFrequency = function () {
+        if (counter < n.length - 1) {
+            console.log(counter);
+            counter++;
+            r_sound.frequency = n[counter];
+            g_sound.frequency = n[counter];
+            b_sound.frequency = n[counter];
+        } else {
+            clearInterval(self.inId);
+            r_sound.stop();
+            g_sound.stop();
+            b_sound.stop();
+        }
+    };
 }
 
 //cut all notes to right orientation
