@@ -8,97 +8,70 @@ var rgb = {
 var scores = [];
 var notes = [];
 
-//palette
-function drawNotes(context, notes) {
-    context.lineWidth = 3;
-    context.strokeStyle = "rgb(" + notes[0].color.r + "," + notes[0].color.g + "," + notes[0].color.b + ")";
-    context.beginPath();
-    context.moveTo(notes[0].x, notes[0].y);
-    for (var note of notes) {
-        context.lineTo(note.x, note.y);
-    }
-    context.stroke();
-    context.closePath();
+// create web audio api context
+var audioCtx;
+
+// create Oscillator node
+var selectedSineWave;
+var selectedSquareWave;
+var selectedTriangleWave;
+var selectedSineGainNode;
+var selectedSquareGainNode;
+var selectedTriangleGainNode;
+
+var mainVolume = 0.1;
+
+function initSelectedSounds() {
+    // create web audio api context
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    selectedSineGainNode = audioCtx.createGain();
+    selectedSquareGainNode = audioCtx.createGain();
+    selectedTriangleGainNode = audioCtx.createGain();
+    selectedSineGainNode.connect(audioCtx.destination);
+    selectedSquareGainNode.connect(audioCtx.destination);
+    selectedTriangleGainNode.connect(audioCtx.destination);
+
+    createSelectedSound();
 }
 
+function createSelectedSound() {
+    // create Oscillator node
+    selectedSineWave = audioCtx.createOscillator();
+    selectedSquareWave = audioCtx.createOscillator();
+    selectedTriangleWave = audioCtx.createOscillator();
 
-function drawing() {
-    var startDrawing = false;
-    var canvasEl = document.getElementById('palette');
-    var context = canvasEl.getContext('2d');
+    selectedSineWave.type = 'sine';
+    selectedSineWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    selectedSineWave.connect(selectedSineGainNode);
 
-    canvasEl.addEventListener('mousedown', function (mouseEvent) {
-        if (mouseEvent.buttons == 1) {
-            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
-            if (!startDrawing) {
-                startDrawing = true;
-                notes = [];
-            }
-            notes.push(note);
-        }
-    });
+    selectedSquareWave.type = 'square';
+    selectedSquareWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    selectedSquareWave.connect(selectedSquareGainNode);
 
-    canvasEl.addEventListener('mousemove', function (mouseEvent) {
-        if (startDrawing) {
-            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
-            //let to make notes local in for because I'm lazy to just change the name
-            //here we draw the old lines
-            for (let notes of scores) {
-                drawNotes(context, notes);
-            }
-            //here we draw the current line
-            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
-            notes.push(note);
-            drawNotes(context, notes);
-            notes.pop();
-        }
-    });
-
-    canvasEl.addEventListener('contextmenu', function (e) {
-        e.preventDefault();
-        if (startDrawing) {
-            startDrawing = false;
-            if (notes.length != 1) {
-                scores.push(notes);
-            }
-            //console.log(scores);
-            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
-            for (let notes of scores) {
-                drawNotes(context, notes);
-            }
-            orderingNotes();
-        }
-    }, false);
+    selectedTriangleWave.type = 'triangle';
+    selectedTriangleWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    selectedTriangleWave.connect(selectedTriangleGainNode);
 }
 
+function playSelectedSound() {
+    createSelectedSound();
+    selectedSineWave.start();
+    selectedSquareWave.start();
+    selectedTriangleWave.start();
+}
 
-//selecting sound
-var selectedSineWave = new Pizzicato.Sound({
-    source: 'wave',
-    options: {
-        type: 'sine',
-        frequency: 440
-    }
-});
+function stopSelectedSound() {
+    selectedSineWave.stop();
+    selectedSquareWave.stop();
+    selectedTriangleWave.stop();
+}
 
-var selectedSquareWave = new Pizzicato.Sound({
-    source: 'wave',
-    options: {
-        type: 'square',
-        frequency: 440
-    }
-});
-
-var selectedTriangleWave = new Pizzicato.Sound({
-    source: 'wave',
-    options: {
-        type: 'triangle',
-        frequency: 440
-    }
-});
-
-var selectedSound = new Pizzicato.Group([selectedSineWave, selectedSquareWave, selectedTriangleWave]);
-Pizzicato.volume = 0.1;
+function selectedSoundVolume(r, g, b) {
+    selectedSineGainNode.gain.setValueAtTime(r / (r + g + b) * mainVolume, audioCtx.currentTime);
+    selectedSquareGainNode.gain.setValueAtTime(g / (r + g + b) * mainVolume, audioCtx.currentTime);
+    selectedTriangleGainNode.gain.setValueAtTime(b / (r + g + b) * mainVolume, audioCtx.currentTime);
+}
 
 //mix and play the sound from stored data
 function playSound() {
@@ -230,6 +203,70 @@ function orderingNotes() {
     }
     scores = newScores;
 }
+
+//palette
+function drawNotes(context, notes) {
+    context.lineWidth = 3;
+    context.strokeStyle = "rgb(" + notes[0].color.r + "," + notes[0].color.g + "," + notes[0].color.b + ")";
+    context.beginPath();
+    context.moveTo(notes[0].x, notes[0].y);
+    for (var note of notes) {
+        context.lineTo(note.x, note.y);
+    }
+    context.stroke();
+    context.closePath();
+}
+
+
+function drawing() {
+    var startDrawing = false;
+    var canvasEl = document.getElementById('palette');
+    var context = canvasEl.getContext('2d');
+
+    canvasEl.addEventListener('mousedown', function (mouseEvent) {
+        if (mouseEvent.buttons == 1) {
+            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
+            if (!startDrawing) {
+                startDrawing = true;
+                notes = [];
+            }
+            notes.push(note);
+        }
+    });
+
+    canvasEl.addEventListener('mousemove', function (mouseEvent) {
+        if (startDrawing) {
+            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            //let to make notes local in for because I'm lazy to just change the name
+            //here we draw the old lines
+            for (let notes of scores) {
+                drawNotes(context, notes);
+            }
+            //here we draw the current line
+            var note = { x: mouseEvent.offsetX, y: mouseEvent.offsetY, color: { r: rgb.r, g: rgb.g, b: rgb.b } };
+            notes.push(note);
+            drawNotes(context, notes);
+            notes.pop();
+        }
+    });
+
+    canvasEl.addEventListener('contextmenu', function (e) {
+        e.preventDefault();
+        if (startDrawing) {
+            startDrawing = false;
+            if (notes.length != 1) {
+                scores.push(notes);
+            }
+            //console.log(scores);
+            context.clearRect(0, 0, canvasEl.width, canvasEl.height);
+            for (let notes of scores) {
+                drawNotes(context, notes);
+            }
+            orderingNotes();
+        }
+    }, false);
+}
+
 //graphic and input stuff
 function project(p, a, b) {
     var atob = [b[0] - a[0], b[1] - a[1]];
@@ -288,22 +325,20 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgb.r, rgb.g, rgb.b);
 
-            selectedSineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
-            selectedSquareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
-            selectedTriangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
-            selectedSound.play();
+            selectedSoundVolume(rgb.r, rgb.g, rgb.b);
+            playSelectedSound();
         }
 
     });
 
     canvasEl.addEventListener('mouseup', function (mouseEvent) {
         mouseDown = false;
-        selectedSound.stop();
+        stopSelectedSound();
     });
 
     canvasEl.addEventListener('mouseout', function (mouseEvent) {
         mouseDown = false;
-        selectedSound.stop();
+        stopSelectedSound();
     });
 
     var pos = [256, 256];
@@ -348,9 +383,7 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(pos[0], pos[1], rgb.r, rgb.g, rgb.b);
 
-            selectedSineWave.volume = rgb.r / (rgb.r + rgb.g + rgb.b);
-            selectedSquareWave.volume = rgb.g / (rgb.r + rgb.g + rgb.b);
-            selectedTriangleWave.volume = rgb.b / (rgb.r + rgb.g + rgb.b);
+            selectedSoundVolume(rgb.r, rgb.g, rgb.b);
         }
     });
 
@@ -399,11 +432,15 @@ function selectionCircle(x, y) {
     }, false);
 }
 
+function startApp() {
+    document.getElementById("popUp").style.display = "none";
 
-//function calling
-colorPicker();
-colorSelected();
-selectionCircle(160, 160);
-drawing();
+    //function calling
+    initSelectedSounds();
+    colorPicker();
+    colorSelected();
+    selectionCircle(160, 160);
+    drawing();
+}
 
 
