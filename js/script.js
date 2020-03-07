@@ -10,160 +10,162 @@ var notes = [];
 
 // create web audio api context
 var audioCtx;
-
-// create Oscillator node
-var selectedSineWave;
-var selectedSquareWave;
-var selectedTriangleWave;
-var selectedSineGainNode;
-var selectedSquareGainNode;
-var selectedTriangleGainNode;
-
 var mainVolume = 0.1;
 
-function initSelectedSounds() {
+function initAudio() {
     // create web audio api context
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-    selectedSineGainNode = audioCtx.createGain();
-    selectedSquareGainNode = audioCtx.createGain();
-    selectedTriangleGainNode = audioCtx.createGain();
-    selectedSineGainNode.connect(audioCtx.destination);
-    selectedSquareGainNode.connect(audioCtx.destination);
-    selectedTriangleGainNode.connect(audioCtx.destination);
-
-    createSelectedSound();
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();;
 }
 
-function createSelectedSound() {
+function createSound() {
+    //create Gain
+    var sineGainNode = audioCtx.createGain();
+    var squareGainNode = audioCtx.createGain();
+    var triangleGainNode = audioCtx.createGain();
+    sineGainNode.connect(audioCtx.destination);
+    squareGainNode.connect(audioCtx.destination);
+    triangleGainNode.connect(audioCtx.destination)
+
     // create Oscillator node
-    selectedSineWave = audioCtx.createOscillator();
-    selectedSquareWave = audioCtx.createOscillator();
-    selectedTriangleWave = audioCtx.createOscillator();
+    var sineWave = audioCtx.createOscillator();
+    var squareWave = audioCtx.createOscillator();
+    var triangleWave = audioCtx.createOscillator();
 
-    selectedSineWave.type = 'sine';
-    selectedSineWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
-    selectedSineWave.connect(selectedSineGainNode);
+    sineWave.type = 'sine';
+    sineWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    sineWave.connect(sineGainNode);
 
-    selectedSquareWave.type = 'square';
-    selectedSquareWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
-    selectedSquareWave.connect(selectedSquareGainNode);
+    squareWave.type = 'square';
+    squareWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    squareWave.connect(squareGainNode);
 
-    selectedTriangleWave.type = 'triangle';
-    selectedTriangleWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
-    selectedTriangleWave.connect(selectedTriangleGainNode);
+    triangleWave.type = 'triangle';
+    triangleWave.frequency.setValueAtTime(440, audioCtx.currentTime); // value in hertz
+    triangleWave.connect(triangleGainNode);
+
+    //return back the object
+    return sound = {
+        sineWave: sineWave,
+        squareWave: squareWave,
+        triangleWave: triangleWave,
+        sineWaveGain: sineGainNode,
+        squareWaveGain: squareGainNode,
+        triangleWaveGain: triangleGainNode
+    }
 }
 
-function playSelectedSound() {
-    createSelectedSound();
-    selectedSineWave.start();
-    selectedSquareWave.start();
-    selectedTriangleWave.start();
+function playSound(sound, delay) {
+    sound.sineWave.start(audioCtx.currentTime + delay);
+    sound.squareWave.start(audioCtx.currentTime + delay);
+    sound.triangleWave.start(audioCtx.currentTime + delay);
 }
 
-function stopSelectedSound() {
-    selectedSineWave.stop();
-    selectedSquareWave.stop();
-    selectedTriangleWave.stop();
+function stopSound(sound, delay) {
+    sound.sineWave.stop(audioCtx.currentTime + delay);
+    sound.squareWave.stop(audioCtx.currentTime + delay);
+    sound.triangleWave.stop(audioCtx.currentTime + delay);
 }
 
-function selectedSoundVolume(r, g, b) {
-    selectedSineGainNode.gain.setValueAtTime(r / (r + g + b) * mainVolume, audioCtx.currentTime);
-    selectedSquareGainNode.gain.setValueAtTime(g / (r + g + b) * mainVolume, audioCtx.currentTime);
-    selectedTriangleGainNode.gain.setValueAtTime(b / (r + g + b) * mainVolume, audioCtx.currentTime);
+function soundVolume(sound, r, g, b) {
+    sound.sineWaveGain.gain.setValueAtTime(r / (r + g + b) * mainVolume, audioCtx.currentTime);
+    sound.squareWaveGain.gain.setValueAtTime(g / (r + g + b) * mainVolume, audioCtx.currentTime);
+    sound.triangleWaveGain.gain.setValueAtTime(b / (r + g + b) * mainVolume, audioCtx.currentTime);
 }
 
 //mix and play the sound from stored data
-function playSound() {
+function playPalette() {
     //create all the required sound
     //calculate the volume
     //get all the frequency info
     for (let notes of scores) {
-        var processedNotes = [];
-        for (var i = 0; i < notes.length - 1; i++) {
-            var d_y = (notes[i + 1].y - notes[i].y) / (notes[i + 1].x - notes[i].x);
-            for (var j = 0; j < (notes[i + 1].x - notes[i].x); j++) {
-                var p = notes[i].y + d_y * j;
-                //pixel to frequency conversion
-                var f = 440 * (Math.pow((Math.pow(2, 1 / 12)), (375 - p) / 30));
-                processedNotes.push(f);
-            }
+        var sound = createSound();
+        soundVolume(sound, notes[0].color.r, notes[0].color.g, notes[0].color.b);
+        playSound(sound, notes[0].x / 1000);
+
+        var f = 440 * (Math.pow((Math.pow(2, 1 / 12)), (375 - notes[0].y) / 30));
+        sound.sineWave.frequency.setValueAtTime(f, audioCtx.currentTime + notes[0].x / 1000);
+        sound.triangleWave.frequency.setValueAtTime(f, audioCtx.currentTime + notes[0].x / 1000);
+        sound.squareWave.frequency.setValueAtTime(f, audioCtx.currentTime + notes[0].x / 1000);
+
+        for (var i = 1; i < notes.length; i++) {
+            f = 440 * (Math.pow((Math.pow(2, 1 / 12)), (375 - notes[i].y) / 30));
+            sound.sineWave.frequency.linearRampToValueAtTime(f, audioCtx.currentTime + notes[i].x / 1000);
+            sound.triangleWave.frequency.linearRampToValueAtTime(f, audioCtx.currentTime + notes[i].x / 1000);
+            sound.squareWave.frequency.linearRampToValueAtTime(f, audioCtx.currentTime + notes[i].x / 1000);
         }
-        processedNotes.push(notes[notes.length - 1].y);
-        var sound = new Sound(notes[0].color.r, notes[0].color.g, notes[0].color.b, scores.length, processedNotes, notes[0].x, 0);
-        setTimeSounds(sound);
+
+        stopSound(sound, notes[notes.length - 1].x / 1000);
     }
-
 }
 
-function setTimeSounds(sound) {
-    setTimeout(function () {
-        sound.play();
-        sound.inId = setInterval(function () {
-            sound.changeFrequency();
-        }, 1);
-    }, sound.startTime);
+// function setTimeSounds(sound) {
+//     setTimeout(function () {
+//         sound.play();
+//         sound.inId = setInterval(function () {
+//             sound.changeFrequency();
+//         }, 1);
+//     }, sound.startTime);
 
-}
+// }
 
-function Sound(r, g, b, total, n, startTime, id) {
-    console.log(n);
-    var r_sound = new Pizzicato.Sound({
-        source: 'wave',
-        options: {
-            type: 'sine',
-            frequency: 440
-        }
-    });
-    var g_sound = new Pizzicato.Sound({
-        source: 'wave',
-        options: {
-            type: 'square',
-            frequency: 440
-        }
-    });
-    var b_sound = new Pizzicato.Sound({
-        source: 'wave',
-        options: {
-            type: 'triangle',
-            frequency: 440
-        }
-    });
+// function Sound(r, g, b, total, n, startTime, id) {
+//     console.log(n);
+//     var r_sound = new Pizzicato.Sound({
+//         source: 'wave',
+//         options: {
+//             type: 'sine',
+//             frequency: 440
+//         }
+//     });
+//     var g_sound = new Pizzicato.Sound({
+//         source: 'wave',
+//         options: {
+//             type: 'square',
+//             frequency: 440
+//         }
+//     });
+//     var b_sound = new Pizzicato.Sound({
+//         source: 'wave',
+//         options: {
+//             type: 'triangle',
+//             frequency: 440
+//         }
+//     });
 
-    r_sound.frequency = n[0];
-    g_sound.frequency = n[0];
-    b_sound.frequency = n[0];
-    this.startTime = startTime;
+//     r_sound.frequency = n[0];
+//     g_sound.frequency = n[0];
+//     b_sound.frequency = n[0];
+//     this.startTime = startTime;
 
-    r_sound.volume = r / (r + g + b) / total;
-    g_sound.volume = g / (r + g + b) / total;
-    b_sound.volume = b / (r + g + b) / total;
+//     r_sound.volume = r / (r + g + b) / total;
+//     g_sound.volume = g / (r + g + b) / total;
+//     b_sound.volume = b / (r + g + b) / total;
 
-    this.play = function () {
-        r_sound.play();
-        g_sound.play();
-        b_sound.play();
-    }
+//     this.play = function () {
+//         r_sound.play();
+//         g_sound.play();
+//         b_sound.play();
+//     }
 
-    var counter = 0;
-    this.inId = id;
-    var self = this;
+//     var counter = 0;
+//     this.inId = id;
+//     var self = this;
 
-    this.changeFrequency = function () {
-        if (counter < n.length - 1) {
-            console.log(counter);
-            counter++;
-            r_sound.frequency = n[counter];
-            g_sound.frequency = n[counter];
-            b_sound.frequency = n[counter];
-        } else {
-            clearInterval(self.inId);
-            r_sound.stop();
-            g_sound.stop();
-            b_sound.stop();
-        }
-    };
-}
+//     this.changeFrequency = function () {
+//         if (counter < n.length - 1) {
+//             console.log(counter);
+//             counter++;
+//             r_sound.frequency = n[counter];
+//             g_sound.frequency = n[counter];
+//             b_sound.frequency = n[counter];
+//         } else {
+//             clearInterval(self.inId);
+//             r_sound.stop();
+//             g_sound.stop();
+//             b_sound.stop();
+//         }
+//     };
+// }
 
 //cut all notes to right orientation
 function orderingNotes() {
@@ -314,6 +316,7 @@ function colorPicker() {
 
 
     var mouseDown = false;
+    var sound;
     canvasEl.addEventListener('mousedown', function (mouseEvent) {
         var imgData = context.getImageData(mouseEvent.offsetX, mouseEvent.offsetY, 1, 1);
         rgb.r = imgData.data[0];
@@ -325,20 +328,21 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(mouseEvent.offsetX, mouseEvent.offsetY, rgb.r, rgb.g, rgb.b);
 
-            selectedSoundVolume(rgb.r, rgb.g, rgb.b);
-            playSelectedSound();
+            sound = createSound();
+            playSound(sound, 0);
+            soundVolume(sound, rgb.r, rgb.g, rgb.b);
         }
 
     });
 
     canvasEl.addEventListener('mouseup', function (mouseEvent) {
         mouseDown = false;
-        stopSelectedSound();
+        stopSound(sound, 0);
     });
 
     canvasEl.addEventListener('mouseout', function (mouseEvent) {
         mouseDown = false;
-        stopSelectedSound();
+        stopSound(sound, 0);
     });
 
     var pos = [256, 256];
@@ -383,7 +387,7 @@ function colorPicker() {
             colorSelected(rgb.r, rgb.g, rgb.b)
             selectionCircle(pos[0], pos[1], rgb.r, rgb.g, rgb.b);
 
-            selectedSoundVolume(rgb.r, rgb.g, rgb.b);
+            soundVolume(sound, rgb.r, rgb.g, rgb.b);
         }
     });
 
@@ -436,11 +440,10 @@ function startApp() {
     document.getElementById("popUp").style.display = "none";
 
     //function calling
-    initSelectedSounds();
+    initAudio();
     colorPicker();
     colorSelected();
     selectionCircle(160, 160);
     drawing();
 }
-
 
